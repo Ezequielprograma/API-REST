@@ -60,6 +60,28 @@ aplicacion.get('/api/tareas/:id', function(peticion,respuesta){
     })
 })
 
+aplicacion.post('/api/tareas/',function(peticion,respuesta){
+    pool.getConnection(function(err,connection){
+        const query = `INSERT INTO tareas_app.tareas (descripcion) VALUES (${connection.escape(peticion.body.descripcion)})`
+        
+        connection.query(query, function(error, filas, campos){
+            const nuevoId = filas.insertId
+
+            const queryConsulta = `SELECT * FROM tareas_app.tareas WHERE id=${connection.escape(nuevoId)}`
+
+            connection.query(queryConsulta,function(error,filas,campos){
+                //cuando algo se creo exitosamente segun el codigo HTTP es el 201
+                //indeica que ademas de que fue exitosa la creacion, se tiene un nuevo objeto
+                respuesta.status(201)
+                respuesta.json({data:filas[0]})
+            })
+        })
+        connection.release()
+    })
+})
+
 aplicacion.listen(8080,function(){
     console.log("Servidor Iniciado")
 })
+//paso final, en la linea de comandos:
+//curl -X POST -H "Content-Type: application/json" \ -d '{"descripcion": "Nueva tarea" }' http://localhost:8080/api/tareas
